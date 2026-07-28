@@ -1,0 +1,9 @@
+{
+  "name": "MindHaven",
+  "short_name": "MindHaven",
+  "description": "栖茵的私人生活管理工作台",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F7F4EF",
+  "theme_color": "#E8963A"
+}

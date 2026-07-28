@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-cap-capable" content="yes">
+<meta name="theme-color" content="#E8963A">
+<link rel="manifest" href="manifest.json">
+<title>MindHaven 🍊</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#F7F4EF;--card:#FFFFFF;--primary:#E8963A;--primary-light:#F5D78E;
+  --success:#5A9E5A;--danger:#D4574B;--danger-light:#F5E0DD;
+  --text:#2C2C2C;--text-mid:#666;--text-light:#999;--border:#E5E2DC;
+  --shadow:0 2px 12px rgba(0,0,0,.06);--radius:14px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+  background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;
+  min-height:100vh;display:flex;flex-direction:column}
+
+/* Header */
+header{position:sticky;top:0;z-index:10;
+  background:linear-gradient(135deg,#E8963A,#F0A846);
+  color:#fff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between}
+header h1{font-size:20px;font-weight:700;letter-spacing:1px}
+header .date{font-size:13px;opacity:.85}
+header .emoji{font-size:22px;margin-right:8px}
+
+/* Mood Banner */
+.mood-banner{margin:10px 16px;border-radius:var(--radius);padding:16px 20px;
+  box-shadow:var(--shadow);background:var(--card);text-align:center}
+.mood-banner .mood-title{font-size:14px;color:var(--text-light);margin-bottom:10px}
+.mood-options{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.mood-btn{width:70px;height:78px;border-radius:14px;border:2px solid var(--border);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .2s;background:var(--bg);padding:4px 0;overflow:hidden}
+.mood-btn img{width:44px;height:44px;object-fit:contain;border-radius:8px}
+.mood-btn .mood-label{font-size:10px;color:var(--text-light);margin-top:4px;line-height:1.2;padding:0 2px}
+.mood-btn:hover{border-color:var(--primary);transform:scale(1.05)}
+.mood-btn.selected{border-color:var(--primary);background:var(--primary-light);transform:scale(1.05)}
+.mood-btn.selected .mood-label{color:var(--primary);font-weight:600}
+.mood-quote{font-size:14px;color:var(--text-mid);margin-top:12px;line-height:1.6;
+  padding:10px;border-radius:10px;background:var(--bg);font-style:italic}
+.mood-quote .quote-icon{margin-right:4px}
+
+main{flex:1;overflow-y:auto;padding:4px 0 24px}
+
+/* Card */
+.card{background:var(--card);border-radius:var(--radius);margin:10px 16px;
+  padding:16px;box-shadow:var(--shadow);overflow:hidden}
+.card-header{display:flex;align-items:center;gap:10px;cursor:pointer}
+.card-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;
+  justify-content:center;font-size:20px}
+.card-title{font-size:17px;font-weight:600}
+.card-badge{font-size:12px;margin-left:auto;padding:3px 10px;border-radius:8px;
+  background:var(--bg);color:var(--text-light)}
+.card-badge.has-data{background:var(--primary-light);color:var(--primary);font-weight:600}
+.card-toggle{display:flex;justify-content:center;margin-top:6px;color:var(--text-light);
+  font-size:12px;cursor:pointer}
+.card.collapsed .card-content{display:none}
+.card-content{margin-top:4px}
+
+/* Module icons */
+.icon-checkin{background:var(--primary-light);color:var(--primary)}
+.icon-todo{background:#E0ECF8;color:#4A90D9}
+.icon-fund{background:#FDE8D0;color:#D4762C}
+.icon-expense{background:#E8F5E8;color:var(--success)}
+.icon-review{background:#EDE8F5;color:#7B68AE}
+.icon-period{background:var(--danger-light);color:var(--danger)}
+
+/* Checkin toggle items */
+.checkin-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.checkin-item{display:flex;align-items:center;gap:8px;padding:8px 10px;
+  border-radius:10px;background:var(--bg);font-size:14px;cursor:pointer;
+  transition:all .2s;user-select:none}
+.checkin-item:hover{background:var(--primary-light)}
+.checkin-item.done{background:rgba(232,150,58,.12)}
+.checkin-dot{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .2s}
+.checkin-dot.done{background:var(--primary);border-color:var(--primary);color:#fff}
+.checkin-dot.pending{background:transparent;border-color:var(--text-light);color:var(--text-light)}
+
+/* Checkin Calendar */
+.checkin-calendar{margin-top:12px}
+.checkin-cal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:13px}
+.checkin-cal-stats{display:flex;gap:6px;align-items:center}
+.checkin-stat{padding:4px 10px;border-radius:8px;font-size:12px;background:var(--primary-light);color:var(--primary)}
+.checkin-quote-box{margin-top:10px;padding:12px;border-radius:10px;background:var(--bg);
+  font-size:13px;color:var(--text-mid);text-align:center;line-height:1.6;font-style:italic}
+.checkin-quote-box .quote-mark{color:var(--primary);font-size:16px;font-weight:700}
+.checkin-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;margin-top:6px}
+.checkin-cal-label{font-size:10px;color:var(--text-light);padding:2px 0}
+.checkin-cal-day{font-size:12px;padding:6px 2px;border-radius:8px;position:relative;cursor:default}
+.checkin-cal-day.all-done{background:var(--primary);color:#fff;font-weight:600}
+.checkin-cal-day.partial{background:var(--primary-light);color:var(--primary);font-weight:500}
+.checkin-cal-day.none{background:var(--bg);color:var(--text-mid)}
+.checkin-cal-day.future{color:var(--text-light);opacity:.5}
+.checkin-cal-day.today-outline{outline:2px solid var(--primary);outline-offset:-2px}
+.checkin-cal-day.other-month{color:var(--text-light);opacity:.35}
+
+/* Todo */
+.todo-list{list-style:none}
+.todo-item{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:14px;
+  border-bottom:1px solid var(--border);cursor:pointer}
+.todo-item:last-child{border:none}
+.todo-item .check{width:20px;height:20px;border-radius:5px;border:2px solid var(--border);
+  display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+.todo-item .check.done{background:var(--success);border-color:var(--success);color:#fff;font-size:11px}
+.todo-item.done-text{color:var(--text-light);text-decoration:line-through}
+.todo-item .del-btn{margin-left:auto;color:var(--danger);font-size:12px;
+  background:var(--danger-light);padding:2px 8px;border-radius:6px;cursor:pointer;border:none;flex-shrink:0}
+
+/* Add form */
+.add-form{display:flex;gap:8px;margin-top:10px}
+.add-input{flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:10px;
+  font-size:14px;background:var(--bg);outline:none}
+.add-input:focus{border-color:var(--primary)}
+.add-btn{padding:8px 14px;background:var(--primary);color:#fff;border:none;
+  border-radius:10px;font-size:14px;cursor:pointer;white-space:nowrap}
+
+/* Fund */
+.fund-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;
+  font-size:13px;border-bottom:1px solid var(--border)}
+.fund-row:last-child{border:none}
+.fund-add-form{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
+.fund-add-form input{padding:8px 10px;border:1px solid var(--border);border-radius:8px;
+  font-size:13px;background:var(--bg);outline:none}
+.fund-add-form input:focus{border-color:var(--primary)}
+.fund-add-form .full{grid-column:1/-1}
+.fund-submit{padding:8px;border:none;border-radius:8px;background:var(--primary);
+  color:#fff;font-size:14px;cursor:pointer;grid-column:1/-1}
+
+/* Expense */
+.expense-bar{height:8px;border-radius:4px;background:var(--primary-light);margin-top:4px}
+.expense-bar-fill{height:100%;border-radius:4px;transition:width .3s}
+.expense-cat{display:flex;justify-content:space-between;font-size:13px;padding:4px 0}
+.expense-add-form{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
+.expense-add-form input,.expense-add-form select{padding:8px 10px;border:1px solid var(--border);
+  border-radius:8px;font-size:13px;background:var(--bg);outline:none}
+.expense-add-form .full{grid-column:1/-1}
+
+/* Review */
+.review-item{padding:8px 0;border-bottom:1px dashed var(--border);font-size:13px}
+.review-item:last-child{border:none}
+.review-date{color:var(--text-light);font-size:11px}
+.review-preview{color:var(--text-mid);margin-top:2px}
+
+/* Period Calendar */
+.period-calendar{margin-top:8px}
+.period-cal-header{display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:8px;font-size:14px;font-weight:600}
+.period-cal-nav{background:none;border:none;font-size:16px;color:var(--danger);cursor:pointer;padding:4px 8px}
+.period-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center}
+.period-cal-label{font-size:10px;color:var(--text-light);padding:4px 0}
+.period-cal-day{font-size:13px;padding:8px 2px;border-radius:8px;cursor:pointer;
+  transition:all .15s;position:relative;min-height:36px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center}
+.period-cal-day:hover{background:var(--danger-light)}
+.period-cal-day.period-start{background:var(--danger);color:#fff;font-weight:700;border-radius:8px}
+.period-cal-day.period-end{background:var(--danger);color:#fff;font-weight:700;border-radius:8px;
+  border:2px solid #fff;box-shadow:0 0 0 1px var(--danger)}
+.period-cal-day.period-mid{background:var(--danger-light);color:var(--danger);font-weight:500}
+.period-cal-day.predicted{background:rgba(212,87,75,.08);border:1.5px dashed var(--danger);color:var(--danger)}
+.period-cal-day.today-marker{outline:2px solid var(--primary);outline-offset:-2px;font-weight:600}
+.period-cal-day.other-month{color:var(--text-light);opacity:.3;cursor:default}
+.period-cal-day.other-month:hover{background:transparent}
+.period-cal-day .day-mark{font-size:8px;margin-top:1px}
+.period-cal-day.period-start .day-mark{color:#fff}
+.period-cal-day.period-end .day-mark{color:#fff}
+
+.period-status{display:flex;justify-content:space-between;margin-top:10px;font-size:13px;flex-wrap:wrap;gap:6px}
+.period-tag{padding:4px 10px;border-radius:8px;font-size:12px}
+.period-tag.upcoming{background:var(--danger-light);color:var(--danger)}
+.period-tag.safe{background:#E8F5E8;color:var(--success)}
+
+.period-tip{font-size:12px;color:var(--text-light);margin-top:8px;text-align:center}
+
+/* Instruction tip */
+.instruction-tip{font-size:12px;color:var(--text-light);margin-top:8px;
+  padding:8px 12px;background:var(--bg);border-radius:8px;text-align:center}
+
+/* Export */
+.export-section{margin:10px 16px;background:var(--card);border-radius:var(--radius);
+  padding:16px;box-shadow:var(--shadow)}
+.export-btn{padding:10px;background:var(--primary);color:#fff;border:none;
+  border-radius:10px;font-size:14px;cursor:pointer;width:100%;margin-top:8px}
+.export-textarea{width:100%;min-height:80px;padding:10px;border:1px solid var(--border);
+  border-radius:10px;font-size:12px;background:var(--bg);margin-top:8px;display:none}
+
+/* Responsive */
+@media(min-width:480px){
+  .card,.export-section,.mood-banner{max-width:460px;margin:10px auto}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center">
+    <span class="emoji">🍊</span>
+    <h1>MindHaven</h1>
+  </div>
+  <div class="date" id="header-date"></div>
+</header>
+
+<main id="app-main"></main>
+
+<script>
+// ===== DATA STORAGE =====
+const STORAGE_KEY = 'mindhaven_data';
+const CHECKIN_ITEMS = ['减脂塑形', '阅读', '瘦金体练习', '英语学习'];
+const EXPENSE_CATS = ['餐饮', '购物', '交通', '娱乐', '医疗', '住房', '教育', '其他'];
+const WEEKDAYS = ['日','一','二','三','四','五','六'];
+const MONTHS_CN = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+
+// Mood images — custom cute cartoon characters
+const MOODS = [
+  { id: 'energetic', name: '元气满满', img: 'mood-icons/energetic.jpg',
+    quotes:['元气满满，今天是你闪耀的日子！','海绵宝宝说：我准备好了！你呢？','比基尼海滩的阳光今天照在你身上！','今天这股劲儿，能冲破一切！'] },
+  { id: 'gloomy', name: '乌云缠绕', img: 'mood-icons/gloomy.jpg',
+    quotes:['乌云总会散开，阳光就在后面等着你。','章鱼哥也难过，但他明天照样拿起了画笔。','允许自己有灰色的日子，颜色会回来的。','低气压的日子，就让自己慢慢呼吸。'] },
+  { id: 'burnout', name: '燃尽了', img: 'mood-icons/burnout.jpg',
+    quotes:['燃尽了也没关系，重新点火就好。','海绵宝宝也会累，但他知道休息后会更强大。','今天的灰烬，是明天火焰的燃料。','电量0%？那就安心充电吧。'] },
+  { id: 'sleepy', name: '困困困', img: 'mood-icons/sleepy.jpg',
+    quotes:['困就睡，海绵宝宝也需要午休。','晚安模式已启动，明天满血复活。','比基尼海滩已经熄灯了，你也该啦。','困困困的时候，床是最好的朋友。'] },
+  { id: 'ordinary', name: '平凡的一天', img: 'mood-icons/ordinary.jpg',
+    quotes:['平凡的一天也值得被好好度过。','没有什么大事发生，也是一种幸福。','海绵宝宝每天都在煎蟹黄堡，你也每天都在认真生活。','日复一日就是生活本身，稳稳的就好。'] },
+  { id: 'hopeful', name: '期待明天', img: 'mood-icons/hopeful.jpg',
+    quotes:['明天会有好事发生，等着瞧！','期待本身就是一种力量。','海绵宝宝永远相信明天会更棒！','好的事情正在路上，你只需要等它到达。'] }
+];
+
+// Motivational quotes for checkin
+const MOTIVATIONS = [
+  '坚持是最好的天赋。','每一天的努力都在积攒力量。','你正在变成更好的自己。',
+  '小步前进，大步到达。','今天的你比昨天更耀眼。','自律给你自由。',
+  '慢慢来，比较快。','不积跬步，无以至千里。','持续的力量比瞬间的爆发更强大。',
+  '每一步都算数。','日拱一卒，功不唐捐。','量变终会引起质变。',
+  '你比昨天又进步了一点点。','你的坚持终将美好。','流水不争先，争的是滔滔不绝。'
+];
+
+const SEED_DATA = {
+  lastUpdated: '2026-07-27 16:17',
+  mood: null,
+  checkin: {},
+  todos: [],
+  funds: [],
+  expenses: [],
+  reviews: [],
+  periodDays: {}
+};
+
+function loadData(){
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if(stored){
+    const d = JSON.parse(stored);
+    if(d.period && Array.isArray(d.period)){
+      d.periodDays = {};
+      d.period.forEach(r=>{
+        const s = new Date(r.start), e = new Date(r.end);
+        d.periodDays[r.start] = 'start';
+        d.periodDays[r.end] = 'end';
+        for(let day=new Date(s);day<=e;day.setDate(day.getDate()+1)){
+          const ds = fmtDate(day);
+          if(ds !== r.start && ds !== r.end) d.periodDays[ds] = 'mid';
+        }
+      });
+      delete d.period;
+    }
+    if(!d.periodDays) d.periodDays = {};
+    if(!d.mood) d.mood = null;
+    return d;
+  }
+  const data = JSON.parse(JSON.stringify(SEED_DATA));
+  saveData(data);
+  return data;
+}
+
+function saveData(data){ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)) }
+
+let DATA = loadData();
+
+// ===== HELPERS =====
+const TODAY = new Date();
+function fmtDate(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` }
+function fmtHeaderDate(){ return `${TODAY.getFullYear()}年${TODAY.getMonth()+1}月${TODAY.getDate()}日 周${WEEKDAYS[TODAY.getDay()]}` }
+function todayStr(){ return fmtDate(TODAY) }
+function randomItem(arr){ return arr[Math.floor(Math.random()*arr.length)] }
+
+// Period prediction
+function calcPeriodPrediction(){
+  const pd = DATA.periodDays;
+  const starts = Object.keys(pd).filter(k=>pd[k]=='start').sort();
+  if(starts.length < 2) return null;
+  const recent = starts.slice(-3);
+  let totalCycle = 0, count = 0;
+  for(let i=1;i<recent.length;i++){
+    const diff = (new Date(recent[i]) - new Date(recent[i-1])) / (1000*60*60*24);
+    totalCycle += diff;
+    count++;
+  }
+  const avgCycle = Math.round(totalCycle / count);
+  const lastStart = recent[recent.length-1];
+  const nextDate = new Date(lastStart);
+  nextDate.setDate(nextDate.getDate() + avgCycle);
+  const daysUntil = Math.round((nextDate - new Date()) / (1000*60*60*24));
+  return { nextDate: fmtDate(nextDate), daysUntil, avgCycle };
+}
+
+// ===== RENDER =====
+function renderDashboard(){
+  document.getElementById('header-date').textContent = fmtHeaderDate();
+  const main = document.getElementById('app-main');
+  main.innerHTML =
+    renderMoodBanner() +
+    renderCheckin() +
+    renderTodos() +
+    renderFunds() +
+    renderExpenses() +
+    renderReviews() +
+    renderPeriod() +
+    renderExport();
+}
+
+// --- MOOD BANNER ---
+function renderMoodBanner(){
+  const todayMood = DATA.mood && DATA.mood.date === todayStr() ? DATA.mood : null;
+
+  let moodHtml = MOODS.map(m=>{
+    const sel = todayMood && todayMood.id === m.id ? 'selected' : '';
+    return `<div class="mood-btn ${sel}" onclick="selectMood('${m.id}')"><img src="${m.img}" alt="${m.name}"><span class="mood-label">${m.name}</span></div>`;
+  }).join('');
+
+  let quoteHtml = '';
+  if(todayMood){
+    const moodData = MOODS.find(m=>m.id===todayMood.id);
+    const quote = moodData ? randomItem(moodData.quotes) : '';
+    quoteHtml = `<div class="mood-quote"><span class="quote-icon">"</span>${quote}<span class="quote-icon">"</span></div>`;
+  } else {
+    quoteHtml = `<div class="mood-quote" style="color:var(--text-light)">选一个今天的心情吧 🍊</div>`;
+  }
+
+  return `<div class="mood-banner">
+    <div class="mood-title">今天的心情</div>
+    <div class="mood-options">${moodHtml}</div>
+    ${quoteHtml}
+  </div>`;
+}
+
+function selectMood(id){
+  DATA.mood = { id, date: todayStr() };
+  saveData(DATA);
+  renderDashboard();
+}
+
+// --- CHECKIN ---
+function renderCheckin(){
+  const todayKey = todayStr();
+  const todayData = DATA.checkin[todayKey] || {};
+  const todayCount = CHECKIN_ITEMS.filter(i=>todayData[i]).length;
+  const badgeCls = todayCount > 0 ? 'has-data' : '';
+  const badgeText = todayCount===0 ? '尚未打卡' : `${todayCount}/4 完成`;
+
+  const items = CHECKIN_ITEMS.map(item=>{
+    const done = todayData[item] || false;
+    return `<div class="checkin-item ${done?'done':''}" onclick="toggleCheckin('${item}')">
+      <span class="checkin-dot ${done?'done':'pending'}">${done?'✓':'○'}</span>
+      <span>${item}</span>
+    </div>`;
+  }).join('');
+
+  // Streak: count fully completed days this month
+  const currentMonth = todayKey.substring(0,7);
+  let streakDays = 0;
+  for(let d=1;d<=TODAY.getDate();d++){
+    const ds = `${currentMonth}-${String(d).padStart(2,'0')}`;
+    const dd = DATA.checkin[ds] || {};
+    if(CHECKIN_ITEMS.every(i=>dd[i])) streakDays++;
+  }
+
+  const calHtml = renderCheckinCalendar(TODAY.getFullYear(), TODAY.getMonth()+1);
+  const quote = randomItem(MOTIVATIONS);
+
+  return `<div class="card collapsed">
+    <div class="card-header" onclick="toggleSection(this)">
+      <div class="card-icon icon-checkin">📋</div>
+      <div class="card-title">今日打卡</div>
+      <div class="card-badge ${badgeCls}">${badgeText}</div>
+    </div>
+    <div class="card-content">
+      <div class="checkin-grid">${items}</div>
+      <div class="checkin-calendar">
+        <div class="checkin-cal-header">
+          <span style="font-weight:600">${TODAY.getFullYear()}年${MONTHS_CN[TODAY.getMonth()]}</span>
+          <div class="checkin-cal-stats">
+            <span class="checkin-stat">本月已打卡 ${streakDays} 天</span>
+          </div>
+        </div>
+        ${calHtml}
+      </div>
+      <div class="checkin-quote-box">
+        <span class="quote-mark">"</span>${quote}<span class="quote-mark">"</span>
+      </div>
+    </div>
+    <div class="card-toggle" onclick="toggleSection(this)">▼ 展开</div>
+  </div>`;
+}
+
+function renderCheckinCalendar(year, month){
+  const firstDay = new Date(year, month-1, 1).getDay();
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const daysInPrevMonth = new Date(year, month-1, 0).getDate();
+  const todayKey = todayStr();
+  const currentMonth = `${year}-${String(month).padStart(2,'0')}`;
+
+  let html = `<div class="checkin-cal-grid">`;
+  WEEKDAYS.forEach(l=>{ html+=`<div class="checkin-cal-label">${l}</div>` });
+
+  for(let i=0;i<firstDay;i++){
+    html+=`<div class="checkin-cal-day other-month">${daysInPrevMonth-firstDay+i+1}</div>`;
+  }
+  for(let d=1;d<=daysInMonth;d++){
+    const ds = `${currentMonth}-${String(d).padStart(2,'0')}`;
+    const dd = DATA.checkin[ds] || {};
+    const doneCount = CHECKIN_ITEMS.filter(i=>dd[i]).length;
+    let cls = 'checkin-cal-day';
+    if(ds === todayKey) cls += ' today-outline';
+    if(ds > todayKey) cls += ' future';
+    else if(doneCount===4) cls += ' all-done';
+    else if(doneCount>0) cls += ' partial';
+    else cls += ' none';
+    html+=`<div class="${cls}">${d}</div>`;
+  }
+  const totalCells = firstDay + daysInMonth;
+  const remaining = (7 - totalCells%7)%7;
+  for(let i=1;i<=remaining;i++){
+    html+=`<div class="checkin-cal-day other-month">${i}</div>`;
+  }
+  html += `</div>`;
+  return html;
+}
+
+function toggleCheckin(item){
+  const todayKey = todayStr();
+  if(!DATA.checkin[todayKey]) DATA.checkin[todayKey] = {};
+  DATA.checkin[todayKey][item] = !DATA.checkin[todayKey][item];
+  saveData(DATA);
+  renderDashboard();
+}
+
+// --- TODO ---
+function renderTodos(){
+  const todos = DATA.todos;
+  const pending = todos.filter(t=>!t.done);
+  const badgeCls = todos.length > 0 ? 'has-data' : '';
+  const badgeText = pending.length===0 ? '暂无待办' : `${pending.length} 项待办`;
+
+  let listHtml = '';
+  if(todos.length===0){
+    listHtml = `<div style="text-align:center;color:var(--text-light);padding:12px;font-size:13px">在下方添加待办事项 ✏️</div>`;
+  } else {
+    listHtml = `<ul class="todo-list">${todos.map((t,i)=>`
+      <li class="todo-item" onclick="toggleTodo(${i})">
+        <span class="check ${t.done?'done':''}">${t.done?'✓':''}</span>
+        <span class="${t.done?'done-text':''}">${t.text}</span>
+        <button class="del-btn" onclick="event.stopPropagation();deleteTodo(${i})">删除</button>
+      </li>`).join('')}</ul>`;
+  }
+
+  return `<div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-todo">📝</div>
+      <div class="card-title">待办事项</div>
+      <div class="card-badge ${badgeCls}">${badgeText}</div>
+    </div>
+    <div class="card-content">
+      ${listHtml}
+      <div class="add-form">
+        <input class="add-input" id="todo-input" placeholder="输入待办内容..." onkeydown="if(event.key==='Enter')addTodo()">
+        <button class="add-btn" onclick="addTodo()">添加</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function addTodo(){
+  const input = document.getElementById('todo-input');
+  const text = input.value.trim();
+  if(!text) return;
+  DATA.todos.push({ text, done: false });
+  saveData(DATA);
+  renderDashboard();
+}
+function toggleTodo(i){ DATA.todos[i].done=!DATA.todos[i].done; saveData(DATA); renderDashboard(); }
+function deleteTodo(i){ DATA.todos.splice(i,1); saveData(DATA); renderDashboard(); }
+
+// --- FUND ---
+function renderFunds(){
+  const funds = DATA.funds;
+  const badgeCls = funds.length>0 ? 'has-data' : '';
+  const badgeText = funds.length===0 ? '尚未录入' : `${funds.length} 条`;
+
+  let listHtml = '';
+  if(funds.length===0){
+    listHtml = `<div style="text-align:center;color:var(--text-light);padding:12px;font-size:13px">在下方录入基金净值数据 📊</div>`;
+  } else {
+    listHtml = `<div style="max-height:160px;overflow-y:auto">${funds.slice(-5).map(f=>`
+      <div class="fund-row"><span>${f.date}</span><span>${f.name}</span><span>${f.nav}</span>
+        <span style="color:${f.change.startsWith('+')?'var(--danger)':'var(--success)'}">${f.change}</span></div>`).join('')}</div>`;
+  }
+
+  return `<div class="card collapsed">
+    <div class="card-header" onclick="toggleSection(this)">
+      <div class="card-icon icon-fund">📈</div>
+      <div class="card-title">基金概览</div>
+      <div class="card-badge ${badgeCls}">${badgeText}</div>
+    </div>
+    <div class="card-content">
+      ${listHtml}
+      <div class="fund-add-form">
+        <input id="fund-name" placeholder="基金名称"><input id="fund-nav" placeholder="净值">
+        <input id="fund-change" placeholder="日涨跌"><input id="fund-cum" placeholder="累计盈亏">
+        <button class="fund-submit" onclick="addFund()">录入今日数据</button>
+      </div>
+    </div>
+    <div class="card-toggle" onclick="toggleSection(this)">▼ 展开</div>
+  </div>`;
+}
+
+function addFund(){
+  const name=document.getElementById('fund-name').value.trim();
+  const nav=document.getElementById('fund-nav').value.trim();
+  const change=document.getElementById('fund-change').value.trim();
+  const cum=document.getElementById('fund-cum').value.trim();
+  if(!name||!nav) return;
+  DATA.funds.push({date:todayStr(),name,nav,change:change||'0%',cum:cum||'--'});
+  saveData(DATA); renderDashboard();
+}
+
+// --- EXPENSE ---
+function renderExpenses(){
+  const exps = DATA.expenses;
+  const currentMonth = todayStr().substring(0,7);
+  const monthExps = exps.filter(e=>e.date.startsWith(currentMonth));
+  const total = monthExps.reduce((s,e)=>s+parseFloat(e.amount),0);
+  const badgeCls = total>0 ? 'has-data' : '';
+  const badgeText = total===0 ? '暂无记录' : `¥${total.toFixed(0)}`;
+
+  const cats = {};
+  monthExps.forEach(e=>{ cats[e.cat]=(cats[e.cat]||0)+parseFloat(e.amount) });
+  const catEntries = Object.entries(cats).sort((a,b)=>b[1]-a[1]);
+
+  let catHtml = '';
+  if(monthExps.length===0){
+    catHtml = `<div style="text-align:center;color:var(--text-light);padding:12px;font-size:13px">在下方录入支出 💰</div>`;
+  } else {
+    const catColors = ['#E8963A','#5A9E5A','#4A90D9','#7B68AE','#D4574B','#D4762C','#2C2C2C','#999'];
+    catHtml = `<div style="font-size:14px;font-weight:500;margin-bottom:8px">本月 ${monthExps.length} 笔 · ¥${total.toFixed(0)}</div>`;
+    catHtml += catEntries.map((entry,i)=>{
+      const pct = total>0?(entry[1]/total*100):0;
+      return `<div class="expense-cat"><span>${entry[0]}</span><span>¥${entry[1].toFixed(0)} (${pct.toFixed(0)}%)</span></div>
+        <div class="expense-bar"><div class="expense-bar-fill" style="width:${pct}%;background:${catColors[i%catColors.length]}"></div></div>`;
+    }).join('');
+    catHtml += `<div style="max-height:120px;overflow-y:auto;margin-top:8px">${monthExps.slice(-5).map(e=>`
+      <div class="fund-row"><span>${e.date.slice(5)}</span><span>${e.cat}</span><span>¥${parseFloat(e.amount).toFixed(0)}</span><span style="color:var(--text-light)">${e.note||''}</span></div>`).join('')}</div>`;
+  }
+
+  return `<div class="card collapsed">
+    <div class="card-header" onclick="toggleSection(this)">
+      <div class="card-icon icon-expense">💳</div>
+      <div class="card-title">本月支出</div>
+      <div class="card-badge ${badgeCls}">${badgeText}</div>
+    </div>
+    <div class="card-content">
+      ${catHtml}
+      <div class="expense-add-form">
+        <select id="expense-cat">${EXPENSE_CATS.map(c=>`<option value="${c}">${c}</option>`).join('')}</select>
+        <input id="expense-amount" placeholder="金额" type="number">
+        <input id="expense-note" placeholder="备注" class="full">
+        <button class="fund-submit" onclick="addExpense()">录入支出</button>
+      </div>
+    </div>
+    <div class="card-toggle" onclick="toggleSection(this)">▼ 展开</div>
+  </div>`;
+}
+
+function addExpense(){
+  const cat=document.getElementById('expense-cat').value;
+  const amount=document.getElementById('expense-amount').value.trim();
+  const note=document.getElementById('expense-note').value.trim();
+  if(!amount) return;
+  DATA.expenses.push({date:todayStr(),cat,amount,note});
+  saveData(DATA); renderDashboard();
+}
+
+// --- REVIEW ---
+function renderReviews(){
+  const reviews = DATA.reviews;
+  const badgeCls = reviews.length>0 ? 'has-data' : '';
+  const badgeText = reviews.length===0 ? '暂无记录' : `${reviews.length} 条`;
+
+  let listHtml = '';
+  if(reviews.length===0){
+    listHtml = `<div style="text-align:center;color:var(--text-light);padding:12px;font-size:13px">在下方写下你的感悟 📖</div>`;
+  } else {
+    listHtml = `<div style="max-height:160px;overflow-y:auto">${reviews.slice(-5).reverse().map(r=>`
+      <div class="review-item"><div class="review-date">${r.date}</div>
+        <div class="review-preview">${r.content.substring(0,80)}${r.content.length>80?'...':''}</div></div>`).join('')}</div>`;
+  }
+
+  return `<div class="card collapsed">
+    <div class="card-header" onclick="toggleSection(this)">
+      <div class="card-icon icon-review">📖</div>
+      <div class="card-title">复盘笔记</div>
+      <div class="card-badge ${badgeCls}">${badgeText}</div>
+    </div>
+    <div class="card-content">
+      ${listHtml}
+      <div class="add-form">
+        <input class="add-input" id="review-input" placeholder="写下今天的感悟..." onkeydown="if(event.key==='Enter')addReview()">
+        <button class="add-btn" onclick="addReview()">记录</button>
+      </div>
+    </div>
+    <div class="card-toggle" onclick="toggleSection(this)">▼ 展开</div>
+  </div>`;
+}
+
+function addReview(){
+  const content=document.getElementById('review-input').value.trim();
+  if(!content) return;
+  DATA.reviews.push({date:todayStr(),content});
+  saveData(DATA); renderDashboard();
+}
+
+// --- PERIOD (Interactive Calendar) ---
+let periodViewMonth = TODAY.getMonth()+1;
+let periodViewYear = TODAY.getFullYear();
+
+function renderPeriod(){
+  const pd = DATA.periodDays;
+  const starts = Object.keys(pd).filter(k=>pd[k]=='start').sort();
+  const pred = calcPeriodPrediction();
+
+  const badgeCls = starts.length>0 ? 'has-data' : '';
+  let badgeText = '暂无预测';
+  if(pred){
+    badgeText = pred.daysUntil<=7 ? `⚠️ ${pred.daysUntil}天后` : `还有${pred.daysUntil}天`;
+  } else if(starts.length===1){
+    badgeText = '1条记录';
+  }
+
+  const calHtml = renderPeriodCalendar(periodViewYear, periodViewMonth);
+
+  let statusHtml = '';
+  if(pred){
+    statusHtml = `<div class="period-status">
+      <span class="period-tag ${pred.daysUntil<=7?'upcoming':'safe'}">${pred.daysUntil<=7?'⚠️ 即将到来':'✅ 暂时安全'}</span>
+      <span style="font-size:13px;color:var(--text-light)">预测：${pred.nextDate} · 平均周期 ${pred.avgCycle}天</span>
+    </div>`;
+  }
+
+  const instruction = `<div class="instruction-tip">💡 点击日历上的日期来标记：第1天点「开始」，最后一天点「结束」，中间天数会自动填充</div>`;
+
+  return `<div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-period">🩺</div>
+      <div class="card-title">生理期预测</div>
+      <div class="card-badge ${badgeCls}">${badgeText}</div>
+    </div>
+    <div class="card-content">
+      <div class="period-calendar">
+        <div class="period-cal-header">
+          <button class="period-cal-nav" onclick="periodNav(-1)">◀</button>
+          <span>${periodViewYear}年${MONTHS_CN[periodViewMonth-1]}</span>
+          <button class="period-cal-nav" onclick="periodNav(1)">▶</button>
+        </div>
+        ${calHtml}
+      </div>
+      ${statusHtml}
+      ${instruction}
+    </div>
+  </div>`;
+}
+
+function renderPeriodCalendar(year, month){
+  const firstDay = new Date(year, month-1, 1).getDay();
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const daysInPrevMonth = new Date(year, month-1, 0).getDate();
+  const pd = DATA.periodDays;
+  const pred = calcPeriodPrediction();
+  const todayKey = todayStr();
+
+  const predictedDays = new Set();
+  if(pred){
+    const ns = new Date(pred.nextDate);
+    const startKeys = Object.keys(pd).filter(k=>pd[k]=='start').sort();
+    const endKeys = Object.keys(pd).filter(k=>pd[k]=='end').sort();
+    let avgDuration = 5;
+    if(startKeys.length>0 && endKeys.length>0){
+      const durations = [];
+      for(let i=0;i<startKeys.length;i++){
+        const si = startKeys[i];
+        const ei = endKeys.find(e=>e>si);
+        if(ei) durations.push(Math.round((new Date(ei)-new Date(si))/(1000*60*60*24))+1);
+      }
+      if(durations.length>0) avgDuration = Math.round(durations.reduce((a,b)=>a+b,0)/durations.length);
+    }
+    for(let i=0;i<avgDuration;i++){
+      const d=new Date(ns); d.setDate(d.getDate()+i);
+      const ds=fmtDate(d);
+      if(ds.startsWith(`${year}-${String(month).padStart(2,'0')}`)) predictedDays.add(ds);
+    }
+  }
+
+  let html = `<div class="period-cal-grid">`;
+  WEEKDAYS.forEach(l=>{ html+=`<div class="period-cal-label">${l}</div>` });
+
+  for(let i=0;i<firstDay;i++){
+    html+=`<div class="period-cal-day other-month">${daysInPrevMonth-firstDay+i+1}</div>`;
+  }
+  for(let d=1;d<=daysInMonth;d++){
+    const ds = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const mark = pd[ds];
+    let cls = 'period-cal-day';
+    let dayMark = '';
+    if(ds===todayKey) cls+=' today-marker';
+    if(mark==='start'){ cls+=' period-start'; dayMark='<span class="day-mark">开始</span>'; }
+    else if(mark==='end'){ cls+=' period-end'; dayMark='<span class="day-mark">结束</span>'; }
+    else if(mark==='mid'){ cls+=' period-mid'; }
+    else if(predictedDays.has(ds)){ cls+=' predicted'; }
+    html+=`<div class="${cls}" onclick="togglePeriodDay('${ds}')">${d}${dayMark}</div>`;
+  }
+  const totalCells = firstDay+daysInMonth;
+  const remaining = (7-totalCells%7)%7;
+  for(let i=1;i<=remaining;i++){
+    html+=`<div class="period-cal-day other-month">${i}</div>`;
+  }
+  html += `</div>`;
+  return html;
+}
+
+function togglePeriodDay(ds){
+  const pd = DATA.periodDays;
+  const current = pd[ds];
+
+  if(!current){
+    const startKeys = Object.keys(pd).filter(k=>pd[k]=='start').sort();
+    const endKeys = Object.keys(pd).filter(k=>pd[k]=='end').sort();
+    const lastStart = startKeys.length>0 ? startKeys[startKeys.length-1] : null;
+    const lastEnd = endKeys.length>0 ? endKeys[endKeys.length-1] : null;
+
+    if(lastStart && !lastEnd){
+      if(ds > lastStart){
+        pd[ds] = 'end';
+        const s = new Date(lastStart), e = new Date(ds);
+        for(let day=new Date(s);day<=e;day.setDate(day.getDate()+1)){
+          const key = fmtDate(day);
+          if(key!==lastStart && key!==ds) pd[key] = 'mid';
+        }
+      }
+    } else if(lastStart && lastEnd && ds > new Date(lastEnd)){
+      pd[ds] = 'start';
+    } else {
+      pd[ds] = 'start';
+    }
+  } else if(current==='start'){
+    const s = new Date(ds);
+    const endKeys = Object.keys(pd).filter(k=>pd[k]=='end' && new Date(k)>s).sort();
+    const endKey = endKeys.length>0 ? endKeys[0] : null;
+    if(endKey){
+      const e = new Date(endKey);
+      for(let day=new Date(s);day<=e;day.setDate(day.getDate()+1)){
+        delete pd[fmtDate(day)];
+      }
+    } else {
+      delete pd[ds];
+      const nextStart = Object.keys(pd).filter(k=>pd[k]=='start' && new Date(k)>s).sort()[0];
+      if(nextStart){
+        for(let day=new Date(s);day<new Date(nextStart);day.setDate(day.getDate()+1)){
+          const key = fmtDate(day);
+          if(pd[key]=='mid') delete pd[key];
+        }
+      }
+    }
+  } else if(current==='end'){
+    delete pd[ds];
+    const startKeys = Object.keys(pd).filter(k=>pd[k]=='start').sort();
+    const prevStarts = startKeys.filter(k=>new Date(k)<new Date(ds));
+    if(prevStarts.length>0){
+      const ps = prevStarts[prevStarts.length-1];
+      const s = new Date(ps);
+      for(let day=new Date(s);day<=new Date(ds);day.setDate(day.getDate()+1)){
+        const key = fmtDate(day);
+        if(pd[key]=='mid') delete pd[key];
+      }
+    }
+  } else if(current==='mid'){
+    delete pd[ds];
+  }
+
+  saveData(DATA);
+  renderDashboard();
+}
+
+function periodNav(dir){
+  periodViewMonth += dir;
+  if(periodViewMonth>12){ periodViewMonth=1; periodViewYear++; }
+  if(periodViewMonth<1){ periodViewMonth=12; periodViewYear--; }
+  renderDashboard();
+}
+
+// --- EXPORT ---
+function renderExport(){
+  return `<div class="export-section">
+    <div style="font-size:14px;font-weight:600;margin-bottom:6px">📤 数据同步</div>
+    <div style="font-size:13px;color:var(--text-light)">点击生成数据摘要，复制发给 Buddy 同步到工作空间</div>
+    <button class="export-btn" onclick="exportData()">导出数据给 Buddy</button>
+    <textarea class="export-textarea" id="export-output"></textarea>
+  </div>`;
+}
+
+function exportData(){
+  const textarea = document.getElementById('export-output');
+  textarea.style.display = 'block';
+  textarea.value = JSON.stringify(DATA, null, 2);
+  textarea.select();
+}
+
+// --- SECTION TOGGLE ---
+function toggleSection(el){
+  const card = el.closest('.card');
+  card.classList.toggle('collapsed');
+  const toggle = card.querySelector('.card-toggle');
+  if(toggle){
+    toggle.textContent = card.classList.contains('collapsed') ? '▼ 展开' : '▲ 收起';
+  }
+}
+
+// ===== INIT =====
+renderDashboard();
+</script>
+</body>
+</html>
